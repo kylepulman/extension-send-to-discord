@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/chrome-manifest",
+  "manifest_version": 3,
+  "name": "Send to Discord",
+  "version": "0.0.0",
+  "action": {
+    "default_popup": "./popup/index.html"
+  },
+  "background": {
+    "service_worker": "./background.js"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "./content.js"
+      ],
+      "matches": [
+        "https://*/*"
+      ]
+    }
+  ]
+}
