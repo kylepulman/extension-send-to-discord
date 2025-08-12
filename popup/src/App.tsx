@@ -16,7 +16,7 @@ async function setStorage(data: Data) {
   try {
     console.log('trying extension storage')
     await chrome.storage.local.set(data)
-  } catch (error) {
+  } catch (_error) {
     console.log('using local storage')
     localStorage.setItem('sendToDiscord', JSON.stringify(data))
   }
@@ -26,7 +26,7 @@ async function getStorage(): Promise<Data> {
   try {
     console.log('trying extension storage')
     return await chrome.storage.local.get()
-  } catch (error) {
+  } catch (_error) {
     console.log('using local storage')
     return JSON.parse(localStorage.getItem('sendToDiscord') ?? '{}')
   }
