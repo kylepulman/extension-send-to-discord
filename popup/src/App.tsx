@@ -1,24 +1,29 @@
+import * as z from 'zod'
 import { useEffect, useState, type FormEventHandler } from 'react'
 import { Heading } from './components/heading'
-import { Field, Fieldset, Label, Legend } from './components/fieldset'
+import { ErrorMessage, Field, Fieldset, Label, Legend } from './components/fieldset'
 import { FieldGroup } from './components/fieldset'
 import { Text } from './components/text'
 import { Input } from './components/input'
 import { Button } from './components/button'
 
-type Data = {
-  message: string
-  channelId: string
-  apiKey: string
-}
+const Data = z.object({
+  message: z.templateLiteral([z.string().max(100), '<url>', z.string().max(100)]),
+  channelId: z.string().length(19),
+  apiKey: z.string().min(1).max(100)
+})
+
+type Data = z.infer<typeof Data>
 
 async function setStorage(data: Data) {
+  console.log(data)
+
+  localStorage.setItem('sendToDiscord', JSON.stringify(data))
+
   try {
-    console.log('trying extension storage')
     await chrome.storage.local.set(data)
-  } catch (_error) {
-    console.log('using local storage')
-    localStorage.setItem('sendToDiscord', JSON.stringify(data))
+  } catch (error) {
+    console.error('Failed to set extension storage:', error)
   }
 }
 
@@ -33,6 +38,8 @@ async function getStorage(): Promise<Data> {
 }
 
 function App() {
+  const [zodError, setZodError] = useState<z.ZodError>()
+
   function handleSubmit(): FormEventHandler<HTMLFormElement> {
     return async (event) => {
       event.preventDefault()
@@ -41,19 +48,48 @@ function App() {
 
       const data = Object.fromEntries(formData.entries()) as Data
 
-      await setStorage(data)
+      try {
+        Data.parse(data)
+
+        await setStorage(data)
+      } catch (error) {
+        console.log(error)
+
+        if (error instanceof z.ZodError) {
+          setZodError(error)
+        }
+      }
     }
   }
 
   const [data, setData] = useState<Data>({
-    message: '',
+    message: '<url>',
     channelId: '',
     apiKey: ''
   })
 
   useEffect(() => {
-    getStorage().then(storedData => setData(storedData))
+    getStorage().then(storedData => {
+      console.log(storedData)
+
+      setData({
+        message: storedData.message,
+        channelId: storedData.channelId,
+        apiKey: storedData.apiKey
+      })
+    })
   }, [])
+
+  function isInvalid(name: string) {
+    return zodError?.issues.some(issue => issue.path.includes(name))
+  }
+
+  function invalidMessage(name: string) {
+    return zodError
+      ?.issues
+      .filter(issue => issue.path.includes(name))
+      .map((issue, i) => <ErrorMessage key={i}>{issue.message}: {issue.code}</ErrorMessage>)
+  }
 
   return (
     <>
@@ -65,15 +101,34 @@ function App() {
           <FieldGroup>
             <Field>
               <Label>Message</Label>
-              <Input name="message" defaultValue={data.message} />
+              <Input
+                name="message"
+                value={data.message}
+                onChange={(e) => { setData({ ...data, message: e.currentTarget.value as Data['message'] }) }}
+                invalid={isInvalid('message')}
+              />
+              {isInvalid('message') && invalidMessage('message')}
             </Field>
             <Field>
               <Label>Channel ID</Label>
-              <Input name="channelId" defaultValue={data.channelId} />
+              <Input
+                name="channelId"
+                value={data.channelId}
+                onChange={(e) => { setData({ ...data, channelId: e.currentTarget.value }) }}
+                invalid={isInvalid('channelId')}
+              />
+              {isInvalid('channelId') && invalidMessage('channelId')}
             </Field>
             <Field>
               <Label>API Key</Label>
-              <Input name="apiKey" type="password" defaultValue={data.apiKey} />
+              <Input
+                name="apiKey"
+                type="password"
+                value={data.apiKey}
+                onChange={(e) => { setData({ ...data, apiKey: e.currentTarget.value }) }}
+                invalid={isInvalid('apiKey')}
+              />
+              {isInvalid('apiKey') && invalidMessage('apiKey')}
             </Field>
           </FieldGroup>
         </Fieldset>
