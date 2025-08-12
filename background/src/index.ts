@@ -6,6 +6,14 @@ type Data = {
 
 console.log('Hello background script!')
 
+chrome.action.onClicked.addListener(() => {
+  (async () => {
+    await chrome.tabs.create({
+      url: "chrome-extension://chiodaemigipmogjkfjmlnjpfddljphg/popup/index.html"
+    })
+  })()
+})
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     title: 'Send to Discord',

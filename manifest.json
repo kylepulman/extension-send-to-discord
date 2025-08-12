@@ -4,7 +4,7 @@
   "name": "Send to Discord",
   "version": "0.0.0",
   "action": {
-    "default_popup": "./popup/index.html"
+    "default_title": "Settings"
   },
   "background": {
     "service_worker": "./background.js"
@@ -21,6 +21,7 @@
   ],
   "permissions": [
     "contextMenus",
-    "storage"
+    "storage",
+    "tabs"
   ]
 }

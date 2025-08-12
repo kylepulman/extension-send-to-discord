@@ -16,5 +16,6 @@ Send images to friends on Discord via a custom right-click menu option.
 
 ## Popup
 
+- [x] Keep popup open
 - [ ] Validate inputs
 - [ ] Use local storage alongside extension storage
