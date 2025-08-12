@@ -1,33 +1,84 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState, type FormEventHandler } from 'react'
+import { Heading } from './components/heading'
+import { Field, Fieldset, Label, Legend } from './components/fieldset'
+import { FieldGroup } from './components/fieldset'
+import { Text } from './components/text'
+import { Input } from './components/input'
+import { Button } from './components/button'
+
+type Data = {
+  message: string
+  channelId: string
+  apiKey: string
+}
+
+async function setStorage(data: Data) {
+  try {
+    console.log('trying extension storage')
+    await chrome.storage.local.set(data)
+  } catch (error) {
+    console.log('using local storage')
+    localStorage.setItem('sendToDiscord', JSON.stringify(data))
+  }
+}
+
+async function getStorage(): Promise<Data> {
+  try {
+    console.log('trying extension storage')
+    return await chrome.storage.local.get()
+  } catch (error) {
+    console.log('using local storage')
+    return JSON.parse(localStorage.getItem('sendToDiscord') ?? '{}')
+  }
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  function handleSubmit(): FormEventHandler<HTMLFormElement> {
+    return async (event) => {
+      event.preventDefault()
+
+      const formData = new FormData(event.currentTarget)
+
+      const data = Object.fromEntries(formData.entries()) as Data
+
+      await setStorage(data)
+    }
+  }
+
+  const [data, setData] = useState<Data>({
+    message: '',
+    channelId: '',
+    apiKey: ''
+  })
+
+  useEffect(() => {
+    getStorage().then(storedData => setData(storedData))
+  }, [])
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <form className='p-2 m-2' onSubmit={handleSubmit()}>
+        <Heading>Send to Discord</Heading>
+        <Fieldset>
+          <Legend>Extension Information</Legend>
+          <Text>Please supply the following to use the extension.</Text>
+          <FieldGroup>
+            <Field>
+              <Label>Message</Label>
+              <Input name="message" defaultValue={data.message} />
+            </Field>
+            <Field>
+              <Label>Channel ID</Label>
+              <Input name="channelId" defaultValue={data.channelId} />
+            </Field>
+            <Field>
+              <Label>API Key</Label>
+              <Input name="apiKey" type="password" defaultValue={data.apiKey} />
+            </Field>
+          </FieldGroup>
+        </Fieldset>
+        <Button type="submit" className='my-6'>Save</Button>
+      </form>
     </>
   )
 }
