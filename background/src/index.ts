@@ -1,3 +1,9 @@
+type Data = {
+  message: string
+  channelId: string
+  apiKey: string
+}
+
 console.log('Hello background script!')
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -18,15 +24,17 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
     return
   }
 
+  const data = await chrome.storage.local.get<Data>()
+
   try {
-    const response = await fetch('https://api.kylepulman.com/discord/broadcast/1404140879714848865', {
+    const response = await fetch(`https://api.kylepulman.com/discord/broadcast/${data.channelId}`, {
       method: 'POST',
       headers: {
-        'Authorization': 'QfgZSy0Bero/ede6xY1DnA==',
+        'Authorization': data.apiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        content: `Check out this image: ${url}`
+        content: data.message.replace('<url>', url)
       })
     })
 
